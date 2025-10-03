@@ -1,0 +1,13 @@
+# Binaries
+*.exe
+*.out
+*.dll
+*.so
+
+# Go build cache
+*.log
+*.test
+
+# Ignore IDE configs
+.vscode/
+.idea/
