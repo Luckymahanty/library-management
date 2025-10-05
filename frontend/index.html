@@ -2,20 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Library Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management System</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>📚 Library Management System</h1>
+  <!-- Welcome Page -->
+  <div id="welcome-page">
+    <div class="welcome-content">
+      <h1>📚 Library Management System</h1>
+      <p class="subtitle">Your digital gateway to organized knowledge and seamless book management</p>
+      
+      <div class="features">
+        <div class="feature-card">
+          <div class="icon">📖</div>
+          <h3>Browse Books</h3>
+        </div>
+        <div class="feature-card">
+          <div class="icon">➕</div>
+          <h3>Add Books</h3>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🔍</div>
+          <h3>Search Catalog</h3>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📊</div>
+          <h3>Track Analytics</h3>
+        </div>
+      </div>
 
-  <div id="form">
-    <input type="text" id="title" placeholder="Book Title">
-    <input type="text" id="author" placeholder="Author">
-    <button onclick="addBook()">Add Book</button>
+      <button class="btn btn-primary" onclick="showLogin()">Get Started →</button>
+    </div>
   </div>
 
-  <h2>Available Books</h2>
-  <ul id="book-list"></ul>
+  <!-- Login Page -->
+  <div id="login-page">
+    <div class="login-container">
+      <div class="login-header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to access your library dashboard</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="showWelcome()">← Back</button>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
+      </form>
+
+      <div id="login-error" class="error-message"></div>
+    </div>
+  </div>
+
+  <!-- Home Page -->
+  <div id="home-page">
+    <nav class="navbar">
+      <div class="navbar-brand">📚 Library System</div>
+      <div class="navbar-user">
+        <div class="user-info">
+          <div class="user-name" id="user-name">Admin User</div>
+          <div class="user-role" id="user-role">Administrator</div>
+        </div>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+      </div>
+    </nav>
+
+    <div class="dashboard">
+      <!-- Statistics -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div class="stat-value" id="total-books">0</div>
+          <div class="stat-label">Total Books</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-value">245</div>
+          <div class="stat-label">Active Members</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📖</div>
+          <div class="stat-value">87</div>
+          <div class="stat-label">Books Issued</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏰</div>
+          <div class="stat-value">12</div>
+          <div class="stat-label">Due Today</div>
+        </div>
+      </div>
+
+      <!-- Add Book Section -->
+      <div class="content-section">
+        <div class="section-header">
+          <h2>Add New Book</h2>
+        </div>
+        <form id="add-book-form">
+          <div class="form-group">
+            <label for="book-title">Book Title</label>
+            <input type="text" id="book-title" placeholder="e.g., The Great Gatsby" required>
+          </div>
+          <div class="form-group">
+            <label for="book-author">Author</label>
+            <input type="text" id="book-author" placeholder="e.g., F. Scott Fitzgerald" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Book</button>
+        </form>
+      </div>
+
+      <!-- Books List -->
+      <div class="content-section">
+        <div class="section-header">
+          <h2>Available Books</h2>
+        </div>
+        <div class="search-box">
+          <input type="text" id="search-books" placeholder="Search by title or author..." oninput="handleSearch()">
+        </div>
+        <div class="book-grid" id="book-list">
+          <div class="no-books">No books available yet. Add one above!</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
