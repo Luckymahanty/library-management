@@ -6,61 +6,121 @@ let currentUser = null;
 function showWelcome() {
   document.getElementById('welcome-page').style.display = 'flex';
   document.getElementById('login-page').style.display = 'none';
+  document.getElementById('signup-page').style.display = 'none';
   document.getElementById('home-page').style.display = 'none';
 }
 
 function showLogin() {
   document.getElementById('welcome-page').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('signup-page').style.display = 'none';
+  document.getElementById('home-page').style.display = 'none';
+}
+
+function showSignup() {
+  document.getElementById('welcome-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('signup-page').style.display = 'flex';
   document.getElementById('home-page').style.display = 'none';
 }
 
 function showHome() {
   document.getElementById('welcome-page').style.display = 'none';
   document.getElementById('login-page').style.display = 'none';
+  document.getElementById('signup-page').style.display = 'none';
   document.getElementById('home-page').style.display = 'block';
 }
 
-// Authentication Functions
-function handleLogin(e) {
+// ✅ Signup form submission
+async function handleSignup(e) {
+  e.preventDefault();
+  
+  const username = document.getElementById('signup-username').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+  // Validate passwords match
+  if (password !== confirmPassword) {
+    showSignupError('Passwords do not match!');
+    return;
+  }
+
+  if (!username || !password) {
+    showSignupError('Please fill in all fields');
+    return;
+  }
+
+  try {
+    const res = await fetch('/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+    });
+    
+    const text = await res.text();
+    
+    if (text.includes('successful')) {
+      alert('Signup successful! Please login.');
+      document.getElementById('signup-form').reset();
+      showLogin();
+    } else {
+      showSignupError(text);
+    }
+  } catch (error) {
+    console.error('Signup error:', error);
+    showSignupError('Signup failed. Please try again.');
+  }
+}
+
+// ✅ Login form submission
+async function handleLogin(e) {
   e.preventDefault();
   
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
-  // Basic validation (replace with actual API call to backend)
   if (!username || !password) {
     showError('Please enter both username and password');
     return;
   }
 
-  // TODO: Replace with actual authentication API call
-  // Example: fetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
-  
-  if (username && password) {
-    currentUser = {
-      username: username,
-      role: 'Administrator'
-    };
+  try {
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+    });
     
-    // Update UI with user info
-    document.getElementById('user-name').textContent = username;
-    document.getElementById('user-role').textContent = 'Administrator';
+    const text = await res.text();
     
-    // Clear form and show home page
-    document.getElementById('login-form').reset();
-    showHome();
-    
-    // Load books from backend
-    loadBooks();
-  } else {
-    showError('Invalid credentials');
+    if (text.includes('successful')) {
+      currentUser = {
+        username: username,
+        role: 'Administrator'
+      };
+      
+      // Update UI with user info
+      document.getElementById('user-name').textContent = username;
+      document.getElementById('user-role').textContent = 'Administrator';
+      
+      // Clear form and show home page
+      document.getElementById('login-form').reset();
+      showHome();
+      
+      // Load books from backend
+      loadBooks();
+    } else {
+      showError(text);
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    showError('Login failed. Please try again.');
   }
 }
 
 function handleLogout() {
-  // TODO: Call backend logout API
-  // Example: fetch('/api/auth/logout', { method: 'POST' })
+  // Call backend logout API if needed
+  // fetch('/logout', { method: 'POST' });
   
   currentUser = null;
   books = [];
@@ -79,26 +139,36 @@ function showError(message) {
   }, 3000);
 }
 
+function showSignupError(message) {
+  const errorDiv = document.getElementById('signup-error');
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+  
+  setTimeout(() => {
+    errorDiv.style.display = 'none';
+  }, 3000);
+}
+
 // Book Management Functions
 async function loadBooks() {
   // TODO: Replace with actual API call to fetch books from backend
-  // Example:
-  // try {
-  //   const response = await fetch('/api/books');
-  //   books = await response.json();
-  //   renderBooks();
-  //   updateStats();
-  // } catch (error) {
-  //   console.error('Error loading books:', error);
-  // }
-  
-  // For now, use mock data or empty array
-  books = [];
-  renderBooks();
-  updateStats();
+  try {
+    const response = await fetch('/api/books');
+    if (response.ok) {
+      books = await response.json();
+      renderBooks();
+      updateStats();
+    }
+  } catch (error) {
+    console.error('Error loading books:', error);
+    // Use empty array if API fails
+    books = [];
+    renderBooks();
+    updateStats();
+  }
 }
 
-function handleAddBook(e) {
+async function handleAddBook(e) {
   e.preventDefault();
   
   const title = document.getElementById('book-title').value.trim();
@@ -109,58 +179,72 @@ function handleAddBook(e) {
     return;
   }
 
-  // TODO: Replace with actual API call to add book to backend
-  // Example:
-  // try {
-  //   const response = await fetch('/api/books', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({ title, author })
-  //   });
-  //   const newBook = await response.json();
-  //   books.push(newBook);
-  // } catch (error) {
-  //   console.error('Error adding book:', error);
-  // }
-
-  const newBook = {
-    id: Date.now(),
-    title: title,
-    author: author,
-    addedDate: new Date().toISOString()
-  };
-
-  books.push(newBook);
-  document.getElementById('add-book-form').reset();
-  renderBooks();
-  updateStats();
-  
-  // Show success feedback
-  alert('Book added successfully!');
+  try {
+    const response = await fetch('/api/books', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, author })
+    });
+    
+    if (response.ok) {
+      const newBook = await response.json();
+      books.push(newBook);
+      document.getElementById('add-book-form').reset();
+      renderBooks();
+      updateStats();
+      alert('Book added successfully!');
+    } else {
+      const error = await response.text();
+      alert('Failed to add book: ' + error);
+    }
+  } catch (error) {
+    console.error('Error adding book:', error);
+    
+    // Fallback: Add book locally if API fails
+    const newBook = {
+      id: Date.now(),
+      title: title,
+      author: author,
+      addedDate: new Date().toISOString()
+    };
+    
+    books.push(newBook);
+    document.getElementById('add-book-form').reset();
+    renderBooks();
+    updateStats();
+    alert('Book added locally (API unavailable)');
+  }
 }
 
-function deleteBook(id) {
+async function deleteBook(id) {
   if (!confirm('Are you sure you want to delete this book?')) {
     return;
   }
 
-  // TODO: Replace with actual API call to delete book from backend
-  // Example:
-  // try {
-  //   await fetch(`/api/books/${id}`, { method: 'DELETE' });
-  //   books = books.filter(book => book.id !== id);
-  // } catch (error) {
-  //   console.error('Error deleting book:', error);
-  // }
-
-  books = books.filter(book => book.id !== id);
-  renderBooks();
-  updateStats();
+  try {
+    const response = await fetch(`/api/books/${id}`, { 
+      method: 'DELETE' 
+    });
+    
+    if (response.ok) {
+      books = books.filter(book => book.id !== id);
+      renderBooks();
+      updateStats();
+    } else {
+      alert('Failed to delete book');
+    }
+  } catch (error) {
+    console.error('Error deleting book:', error);
+    
+    // Fallback: Delete locally if API fails
+    books = books.filter(book => book.id !== id);
+    renderBooks();
+    updateStats();
+  }
 }
 
 function editBook(id) {
   // TODO: Implement edit functionality
-  // This could open a modal or navigate to an edit page
   alert('Edit feature coming soon! This will connect to your backend API.');
 }
 
@@ -204,13 +288,7 @@ function handleSearch() {
 function updateStats() {
   document.getElementById('total-books').textContent = books.length;
   
-  // TODO: Update other stats from backend API
-  // Example:
-  // fetch('/api/stats').then(res => res.json()).then(stats => {
-  //   document.getElementById('active-members').textContent = stats.activeMembers;
-  //   document.getElementById('books-issued').textContent = stats.booksIssued;
-  //   document.getElementById('due-today').textContent = stats.dueToday;
-  // });
+  // TODO: Update other stats from backend API if needed
 }
 
 // Utility Functions
@@ -225,12 +303,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize the application
   showWelcome();
   
-  // Setup form event listeners
+  // Setup login form event listener
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
     loginForm.addEventListener('submit', handleLogin);
   }
   
+  // Setup signup form event listener
+  const signupForm = document.getElementById('signup-form');
+  if (signupForm) {
+    signupForm.addEventListener('submit', handleSignup);
+  }
+  
+  // Setup add book form event listener
   const addBookForm = document.getElementById('add-book-form');
   if (addBookForm) {
     addBookForm.addEventListener('submit', handleAddBook);
@@ -250,8 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // Export functions for use in HTML onclick attributes
 window.showWelcome = showWelcome;
 window.showLogin = showLogin;
+window.showSignup = showSignup;
 window.showHome = showHome;
 window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
 window.handleAddBook = handleAddBook;
 window.deleteBook = deleteBook;

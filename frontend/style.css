@@ -108,8 +108,16 @@ body {
   box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
 }
 
+.welcome-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 /* Login Page Styles */
-#login-page {
+#login-page,
+#signup-page {
   display: none;
   align-items: center;
   justify-content: center;
@@ -197,6 +205,23 @@ body {
   border: 1px solid #feb2b2;
   font-size: 0.9rem;
   display: none;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #718096;
+  font-size: 0.95rem;
+}
+
+.form-footer a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
 }
 
 /* Home Page Styles */

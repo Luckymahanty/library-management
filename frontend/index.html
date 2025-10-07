@@ -33,7 +33,48 @@
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="showLogin()">Get Started →</button>
+      <div class="welcome-actions">
+        <button class="btn btn-primary" onclick="showLogin()">Sign In</button>
+        <button class="btn btn-secondary" onclick="showSignup()">Sign Up</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signup Page -->
+  <div id="signup-page">
+    <div class="login-container">
+      <div class="login-header">
+        <h2>Create Account</h2>
+        <p>Join our library management system</p>
+      </div>
+
+      <form id="signup-form">
+        <div class="form-group">
+          <label for="signup-username">Username</label>
+          <input type="text" id="signup-username" placeholder="Choose a username" required>
+        </div>
+
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" placeholder="Create a password" required>
+        </div>
+
+        <div class="form-group">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <input type="password" id="signup-confirm-password" placeholder="Re-enter your password" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="showWelcome()">← Back</button>
+          <button type="submit" class="btn btn-primary">Sign Up</button>
+        </div>
+      </form>
+
+      <div id="signup-error" class="error-message"></div>
+      
+      <div class="form-footer">
+        Already have an account? <a href="#" onclick="showLogin(); return false;">Sign In</a>
+      </div>
     </div>
   </div>
 
@@ -63,6 +104,10 @@
       </form>
 
       <div id="login-error" class="error-message"></div>
+      
+      <div class="form-footer">
+        Don't have an account? <a href="#" onclick="showSignup(); return false;">Sign Up</a>
+      </div>
     </div>
   </div>
 
