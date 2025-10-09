@@ -1,129 +1,144 @@
 package main
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strconv"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strconv"
 
-    "github.com/luckymahanty/library-management/models"
+	"github.com/luckymahanty/library-management/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var books []models.Book
 var nextID = 1
 
 // ==========================
-// 📘 Existing book handlers
+// 📘 BOOK HANDLERS
 // ==========================
 func getBooks(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(books)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(books)
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {
-    var book models.Book
-    err := json.NewDecoder(r.Body).Decode(&book)
-    if err != nil {
-        http.Error(w, "Invalid input", http.StatusBadRequest)
-        return
-    }
-    book.ID = nextID
-    nextID++
-    book.Status = "available"
-    books = append(books, book)
-    json.NewEncoder(w).Encode(book)
+	var book models.Book
+	err := json.NewDecoder(r.Body).Decode(&book)
+	if err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+	book.ID = nextID
+	nextID++
+	book.Status = "available"
+	books = append(books, book)
+	json.NewEncoder(w).Encode(book)
 }
 
 func deleteBook(w http.ResponseWriter, r *http.Request) {
-    idStr := r.URL.Query().Get("id")
-    id, err := strconv.Atoi(idStr)
-    if err != nil {
-        http.Error(w, "Invalid ID", http.StatusBadRequest)
-        return
-    }
-    for i, b := range books {
-        if b.ID == id {
-            books = append(books[:i], books[i+1:]...)
-            fmt.Fprintf(w, "Book with ID %d deleted", id)
-            return
-        }
-    }
-    http.Error(w, "Book not found", http.StatusNotFound)
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	for i, b := range books {
+		if b.ID == id {
+			books = append(books[:i], books[i+1:]...)
+			fmt.Fprintf(w, "Book with ID %d deleted", id)
+			return
+		}
+	}
+	http.Error(w, "Book not found", http.StatusNotFound)
 }
 
 // ==========================
-// 🧍‍♂️ NEW USER HANDLERS
+// 👤 USER HANDLERS
 // ==========================
+type Credentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"` // "admin" or "user"
+}
+
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-    if r.Method == http.MethodPost {
-        username := r.FormValue("username")
-        password := r.FormValue("password")
+	var creds Credentials
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
 
-        if username == "" || password == "" {
-            http.Error(w, "Username and password are required", http.StatusBadRequest)
-            return
-        }
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		return
+	}
 
-        db := models.GetDB()
-        _, err := db.Exec("INSERT INTO users(username, password) VALUES(?, ?)", username, password)
-        if err != nil {
-            http.Error(w, "User already exists or database error", http.StatusInternalServerError)
-            return
-        }
+	// Insert user into DB
+	_, err = models.DB.Exec("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+		creds.Username, string(hashedPassword), creds.Role)
+	if err != nil {
+		http.Error(w, "User already exists or DB error", http.StatusConflict)
+		return
+	}
 
-        fmt.Fprintf(w, "✅ Signup successful! You can now log in.")
-    } else {
-        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-    }
+	fmt.Fprintf(w, "✅ User %s registered successfully!", creds.Username)
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-    if r.Method == http.MethodPost {
-        username := r.FormValue("username")
-        password := r.FormValue("password")
+	var creds Credentials
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
 
-        db := models.GetDB()
-        row := db.QueryRow("SELECT password FROM users WHERE username = ?", username)
+	var storedHash string
+	var role string
+	err := models.DB.QueryRow("SELECT password, role FROM users WHERE username = ?", creds.Username).Scan(&storedHash, &role)
+	if err == sql.ErrNoRows {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		http.Error(w, "DB error", http.StatusInternalServerError)
+		return
+	}
 
-        var storedPassword string
-        err := row.Scan(&storedPassword)
-        if err != nil {
-            http.Error(w, "User not found", http.StatusUnauthorized)
-            return
-        }
+	if err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(creds.Password)); err != nil {
+		http.Error(w, "Incorrect password", http.StatusUnauthorized)
+		return
+	}
 
-        if password != storedPassword {
-            http.Error(w, "Invalid password", http.StatusUnauthorized)
-            return
-        }
-
-        fmt.Fprintf(w, "✅ Login successful! Welcome %s", username)
-    } else {
-        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-    }
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "✅ Login successful!",
+		"role":    role,
+	})
 }
 
 // ==========================
 // 🚀 MAIN FUNCTION
 // ==========================
 func main() {
-    models.InitDB() // Initialize database
+	models.InitDB() // Initialize database
 
-    // Book APIs
-    http.HandleFunc("/books", getBooks)
-    http.HandleFunc("/add", addBook)
-    http.HandleFunc("/delete", deleteBook)
+	// Book APIs
+	http.HandleFunc("/books", getBooks)
+	http.HandleFunc("/add", addBook)
+	http.HandleFunc("/delete", deleteBook)
 
-    // 👇 Register new user routes here
-    http.HandleFunc("/signup", signupHandler)
-    http.HandleFunc("/login", loginHandler)
+	// User APIs
+	http.HandleFunc("/signup", signupHandler)
+	http.HandleFunc("/login", loginHandler)
 
-    // Serve static files
-    fs := http.FileServer(http.Dir("./frontend"))
-    http.Handle("/", fs)
+	// Serve static files (optional frontend)
+	fs := http.FileServer(http.Dir("./frontend"))
+	http.Handle("/", fs)
 
-    fmt.Println("🚀 Server running on http://localhost:8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("📚 Database initialized successfully with books & users tables!")
+	fmt.Println("🚀 Server running on http://localhost:8080")
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
