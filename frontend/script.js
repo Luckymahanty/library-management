@@ -31,10 +31,9 @@ function showHome() {
   document.getElementById('home-page').style.display = 'block';
 }
 
-// ✅ Signup form submission
+// Signup form submission
 async function handleSignup(e) {
   e.preventDefault();
-  
   const username = document.getElementById('signup-username').value.trim();
   const password = document.getElementById('signup-password').value;
   const confirmPassword = document.getElementById('signup-confirm-password').value;
@@ -51,31 +50,32 @@ async function handleSignup(e) {
   }
 
   try {
-    const res = await fetch('/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-    });
-    
-    const text = await res.text();
-    
-    if (text.includes('successful')) {
-      alert('Signup successful! Please login.');
-      document.getElementById('signup-form').reset();
-      showLogin();
-    } else {
-      showSignupError(text);
-    }
-  } catch (error) {
-    console.error('Signup error:', error);
-    showSignupError('Signup failed. Please try again.');
+  const res = await fetch('/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      username: username, 
+      password: password,
+      role: 'user'
+    }),
+  });
+  const text = await res.text();
+  
+  if (text.includes('successful')) {
+    alert('Signup successful! Please login.');
+    document.getElementById('signup-form').reset();
+    showLogin();
+  } else {
+    showSignupError(text);
   }
+} catch (error) {
+  console.error('Signup error:', error);
+  showSignupError('Signup failed. Please try again.');
 }
 
-// ✅ Login form submission
+// Login form submission
 async function handleLogin(e) {
   e.preventDefault();
-  
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
@@ -90,23 +90,19 @@ async function handleLogin(e) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
     });
-    
     const text = await res.text();
-    
+
     if (text.includes('successful')) {
       currentUser = {
         username: username,
         role: 'Administrator'
       };
-      
       // Update UI with user info
       document.getElementById('user-name').textContent = username;
       document.getElementById('user-role').textContent = 'Administrator';
-      
       // Clear form and show home page
       document.getElementById('login-form').reset();
       showHome();
-      
       // Load books from backend
       loadBooks();
     } else {
@@ -119,9 +115,6 @@ async function handleLogin(e) {
 }
 
 function handleLogout() {
-  // Call backend logout API if needed
-  // fetch('/logout', { method: 'POST' });
-  
   currentUser = null;
   books = [];
   renderBooks();
@@ -133,7 +126,6 @@ function showError(message) {
   const errorDiv = document.getElementById('login-error');
   errorDiv.textContent = message;
   errorDiv.style.display = 'block';
-  
   setTimeout(() => {
     errorDiv.style.display = 'none';
   }, 3000);
@@ -143,7 +135,6 @@ function showSignupError(message) {
   const errorDiv = document.getElementById('signup-error');
   errorDiv.textContent = message;
   errorDiv.style.display = 'block';
-  
   setTimeout(() => {
     errorDiv.style.display = 'none';
   }, 3000);
@@ -151,7 +142,6 @@ function showSignupError(message) {
 
 // Book Management Functions
 async function loadBooks() {
-  // TODO: Replace with actual API call to fetch books from backend
   try {
     const response = await fetch('/api/books');
     if (response.ok) {
@@ -170,7 +160,6 @@ async function loadBooks() {
 
 async function handleAddBook(e) {
   e.preventDefault();
-  
   const title = document.getElementById('book-title').value.trim();
   const author = document.getElementById('book-author').value.trim();
 
@@ -185,7 +174,7 @@ async function handleAddBook(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, author })
     });
-    
+
     if (response.ok) {
       const newBook = await response.json();
       books.push(newBook);
@@ -199,7 +188,6 @@ async function handleAddBook(e) {
     }
   } catch (error) {
     console.error('Error adding book:', error);
-    
     // Fallback: Add book locally if API fails
     const newBook = {
       id: Date.now(),
@@ -207,7 +195,6 @@ async function handleAddBook(e) {
       author: author,
       addedDate: new Date().toISOString()
     };
-    
     books.push(newBook);
     document.getElementById('add-book-form').reset();
     renderBooks();
@@ -222,10 +209,10 @@ async function deleteBook(id) {
   }
 
   try {
-    const response = await fetch(`/api/books/${id}`, { 
-      method: 'DELETE' 
+    const response = await fetch(`/api/books/${id}`, {
+      method: 'DELETE'
     });
-    
+
     if (response.ok) {
       books = books.filter(book => book.id !== id);
       renderBooks();
@@ -235,7 +222,6 @@ async function deleteBook(id) {
     }
   } catch (error) {
     console.error('Error deleting book:', error);
-    
     // Fallback: Delete locally if API fails
     books = books.filter(book => book.id !== id);
     renderBooks();
@@ -244,7 +230,6 @@ async function deleteBook(id) {
 }
 
 function editBook(id) {
-  // TODO: Implement edit functionality
   alert('Edit feature coming soon! This will connect to your backend API.');
 }
 
@@ -276,19 +261,16 @@ function handleSearch() {
     renderBooks();
     return;
   }
-  
-  const filtered = books.filter(book => 
-    book.title.toLowerCase().includes(searchTerm) || 
+
+  const filtered = books.filter(book =>
+    book.title.toLowerCase().includes(searchTerm) ||
     book.author.toLowerCase().includes(searchTerm)
   );
-  
   renderBooks(filtered);
 }
 
 function updateStats() {
   document.getElementById('total-books').textContent = books.length;
-  
-  // TODO: Update other stats from backend API if needed
 }
 
 // Utility Functions
@@ -302,25 +284,25 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize the application
   showWelcome();
-  
+
   // Setup login form event listener
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
     loginForm.addEventListener('submit', handleLogin);
   }
-  
+
   // Setup signup form event listener
   const signupForm = document.getElementById('signup-form');
   if (signupForm) {
     signupForm.addEventListener('submit', handleSignup);
   }
-  
+
   // Setup add book form event listener
   const addBookForm = document.getElementById('add-book-form');
   if (addBookForm) {
     addBookForm.addEventListener('submit', handleAddBook);
   }
-  
+
   // Setup search with debouncing
   const searchInput = document.getElementById('search-books');
   if (searchInput) {

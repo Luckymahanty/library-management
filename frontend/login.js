@@ -1,26 +1,23 @@
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  const response = await fetch("/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
+  try {
+    const res = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
 
-  const data = await response.json();
+    const text = await res.text();
+    alert(text);
 
-  if (response.ok) {
-    alert("Welcome " + data.username + " (" + data.role + ")");
-    if (data.role === "admin") {
-      window.location.href = "admin.html";
-    } else {
-      window.location.href = "user.html";
+    if (res.ok) {
+      window.location.href = "index.html";
     }
-  } else {
-    alert(data.error);
+  } catch (err) {
+    alert("⚠️ Error connecting to server: " + err.message);
   }
 });
-
