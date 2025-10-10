@@ -4,11 +4,6 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
 
-  if (!username || !password) {
-    alert("Please enter username and password");
-    return;
-  }
-
   const res = await fetch("/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,7 +12,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
   if (res.ok) {
     const user = await res.json();
-    alert("Login successful!");
+    alert("✅ Login successful!");
 
     if (user.role === "admin") {
       window.location.href = "admin.html";
@@ -25,7 +20,6 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       window.location.href = "user.html";
     }
   } else {
-    const err = await res.text();
-    alert("❌ " + err);
+    alert("❌ Invalid username or password");
   }
 });

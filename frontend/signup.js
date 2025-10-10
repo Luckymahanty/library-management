@@ -5,11 +5,6 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value.trim();
   const role = document.getElementById("role").value;
 
-  if (!username || !password) {
-    alert("All fields are required!");
-    return;
-  }
-
   const res = await fetch("/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,10 +12,10 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
   });
 
   if (res.ok) {
-    alert("✅ Signup successful! You can now login.");
+    alert("✅ Signup successful! Please login now.");
     window.location.href = "login.html";
   } else {
-    const err = await res.text();
-    alert("❌ " + err);
+    const msg = await res.text();
+    alert("❌ " + msg);
   }
 });

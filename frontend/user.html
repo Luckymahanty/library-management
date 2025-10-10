@@ -2,23 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>User Dashboard - Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="navbar">
-    <h2>📖 Welcome to Library - User Panel</h2>
-    <button onclick="logout()">Logout</button>
-  </div>
-
   <div class="container">
+    <h2>Welcome, User!</h2>
+    <button onclick="window.location.href='index.html'">Logout</button>
+
     <h3>Available Books</h3>
-    <table id="booksTable">
-      <thead>
-        <tr><th>ID</th><th>Title</th><th>Author</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <ul id="userBookList"></ul>
   </div>
 
   <script src="user.js"></script>
