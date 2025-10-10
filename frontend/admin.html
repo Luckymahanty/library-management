@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Library</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="navbar">
+    <h2>📚 Library Management - Admin</h2>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container">
+    <h3>Add a New Book</h3>
+    <form id="addBookForm">
+      <input type="text" id="title" placeholder="Book Title" required />
+      <input type="text" id="author" placeholder="Author Name" required />
+      <button type="submit">Add Book</button>
+    </form>
+
+    <h3>All Books</h3>
+    <table id="booksTable">
+      <thead>
+        <tr><th>ID</th><th>Title</th><th>Author</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

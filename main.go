@@ -10,6 +10,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var db *sql.DB
+
 type User struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
@@ -17,17 +19,39 @@ type User struct {
 	Role     string `json:"role"`
 }
 
-var db *sql.DB
+type Book struct {
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+}
 
-// Initialize database
-func initDB() {
+func main() {
 	var err error
-	db, err = sql.Open("sqlite3", "./library.db")
+	db, err = sql.Open("sqlite3", "./database.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	createUserTable := `
+	createTables()
+
+	// Serve frontend
+	fs := http.FileServer(http.Dir("./frontend"))
+	http.Handle("/", fs)
+
+	// API routes
+	http.HandleFunc("/signup", signupHandler)
+	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/books", getBooksHandler)
+	http.HandleFunc("/addbook", addBookHandler)
+	http.HandleFunc("/deletebook", deleteBookHandler)
+
+	fmt.Println("📚 Database ready with users & books!")
+	fmt.Println("🚀 Running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func createTables() {
+	userTable := `
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT UNIQUE,
@@ -35,27 +59,23 @@ func initDB() {
 		role TEXT
 	);`
 
-	createBookTable := `
+	bookTable := `
 	CREATE TABLE IF NOT EXISTS books (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		title TEXT,
-		author TEXT,
-		status TEXT
+		author TEXT
 	);`
 
-	_, err = db.Exec(createUserTable)
-	if err != nil {
-		log.Fatal("Error creating users table:", err)
+	if _, err := db.Exec(userTable); err != nil {
+		log.Fatal("❌ Failed to create users table:", err)
 	}
-	_, err = db.Exec(createBookTable)
-	if err != nil {
-		log.Fatal("Error creating books table:", err)
+	if _, err := db.Exec(bookTable); err != nil {
+		log.Fatal("❌ Failed to create books table:", err)
 	}
-
-	fmt.Println("📚 Database initialized successfully with books & users tables!")
 }
 
-// --- Signup handler ---
+// ---------------- HANDLERS ----------------
+
 func signupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -68,62 +88,92 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Username == "" || user.Password == "" {
-		http.Error(w, "Username and password required", http.StatusBadRequest)
-		return
-	}
-
 	_, err := db.Exec("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
 		user.Username, user.Password, user.Role)
 	if err != nil {
-		http.Error(w, "User already exists", http.StatusBadRequest)
+		http.Error(w, "Username already exists", http.StatusConflict)
 		return
 	}
 
-	fmt.Fprintf(w, "✅ User %s registered successfully!", user.Username)
+	w.Write([]byte("Signup successful"))
 }
 
-// --- Login handler ---
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var input User
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	var creds User
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
 	var dbUser User
-	err := db.QueryRow("SELECT id, username, password, role FROM users WHERE username = ?", input.Username).
+	err := db.QueryRow("SELECT id, username, password, role FROM users WHERE username = ?", creds.Username).
 		Scan(&dbUser.ID, &dbUser.Username, &dbUser.Password, &dbUser.Role)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		http.Error(w, "Invalid username", http.StatusUnauthorized)
 		return
 	}
 
-	if input.Password != dbUser.Password {
+	if dbUser.Password != creds.Password {
 		http.Error(w, "Invalid password", http.StatusUnauthorized)
 		return
 	}
 
-	fmt.Fprintf(w, "✅ Welcome, %s! You are logged in as %s.", dbUser.Username, dbUser.Role)
+	// send user info for redirect
+	resp, _ := json.Marshal(dbUser)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
 }
 
-// --- Main function ---
-func main() {
-	initDB()
-	defer db.Close()
+func getBooksHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT id, title, author FROM books")
+	if err != nil {
+		http.Error(w, "Failed to fetch books", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
 
-	http.HandleFunc("/signup", signupHandler)
-	http.HandleFunc("/login", loginHandler)
+	var books []Book
+	for rows.Next() {
+		var b Book
+		rows.Scan(&b.ID, &b.Title, &b.Author)
+		books = append(books, b)
+	}
 
-	// Serve frontend
-	fs := http.FileServer(http.Dir("./frontend"))
-	http.Handle("/", fs)
+	json.NewEncoder(w).Encode(books)
+}
 
-	fmt.Println("🚀 Server running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+func addBookHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var b Book
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Exec("INSERT INTO books (title, author) VALUES (?, ?)", b.Title, b.Author)
+	if err != nil {
+		http.Error(w, "Failed to add book", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("Book added successfully"))
+}
+
+func deleteBookHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	_, err := db.Exec("DELETE FROM books WHERE id = ?", id)
+	if err != nil {
+		http.Error(w, "Failed to delete book", http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte("Book deleted"))
 }

@@ -5,20 +5,22 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value.trim();
   const role = document.getElementById("role").value;
 
-  try {
-    const res = await fetch("/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, role }),
-    });
+  if (!username || !password) {
+    alert("All fields are required!");
+    return;
+  }
 
-    const text = await res.text();
-    alert(text);
+  const res = await fetch("/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password, role }),
+  });
 
-    if (res.ok) {
-      window.location.href = "login.html";
-    }
-  } catch (err) {
-    alert("⚠️ Error connecting to server: " + err.message);
+  if (res.ok) {
+    alert("✅ Signup successful! You can now login.");
+    window.location.href = "login.html";
+  } else {
+    const err = await res.text();
+    alert("❌ " + err);
   }
 });
