@@ -1,27 +1,25 @@
-# Stage 1: Build the Go application
-FROM golang:1.22-alpine AS builder
+# Stage 1: Build the Go binary with CGO enabled
+FROM golang:1.24-alpine AS builder
+
+# Install gcc and dependencies for CGO/SQLite
+RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app
 
-# Copy go.mod first for caching
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the code
 COPY . .
 
-# Build the Go binary
-RUN CGO_ENABLED=0 go build -o /library-management main.go
+# Enable CGO when building
+ENV CGO_ENABLED=1
+RUN go build -o library-management .
 
-# Stage 2: Minimal runtime image
-FROM alpine:latest
-
-WORKDIR /
-
-# Copy only the compiled binary (no source files!)
-COPY --from=builder /library-management /library-management
-
+# Stage 2: Run the application
+FROM debian:bullseye-slim
+WORKDIR /root/
+COPY --from=builder /app/library-management .
 EXPOSE 8080
+CMD ["./library-management"]
 
-CMD ["/library-management"]
 

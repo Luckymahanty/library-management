@@ -1,0 +1,8 @@
+# this is dicker ignore
+database.db
+.git
+.gitignore
+README.md
+Screenshot/
+frontend/*.png
+*.log
