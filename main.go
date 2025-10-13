@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/luckymahanty/library-management/handlers"
+	"github.com/luckymahanty/library-management/models"
 )
+
 
 var db *sql.DB
 
@@ -44,6 +46,9 @@ func main() {
 	http.HandleFunc("/books", getBooksHandler)
 	http.HandleFunc("/addbook", addBookHandler)
 	http.HandleFunc("/deletebook", deleteBookHandler)
+        http.HandleFunc("/borrow", handlers.BorrowBook(db))
+        http.HandleFunc("/return", handlers.ReturnBook(db))
+
 
 	fmt.Println("📚 Database ready with users & books!")
 	fmt.Println("🚀 Running on http://localhost:8080")
