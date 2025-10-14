@@ -1,61 +1,36 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
+    "database/sql"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
 
-	"github.com/luckymahanty/library-management/handlers"
-	"github.com/luckymahanty/library-management/models"
+    _ "github.com/mattn/go-sqlite3"
+    "github.com/luckymahanty/library-management/models"
 )
-
 
 var db *sql.DB
 
-type User struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
-}
-
-type Book struct {
-	ID     int    `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-}
-
 func main() {
-	var err error
-	db, err = sql.Open("sqlite3", "./database.db")
-	if err != nil {
-		log.Fatal(err)
-	}
+    db = models.InitDB() // ✅ properly initialize DB
+     models.DB = db
+    fmt.Println("📚 Database ready with users & books!")
 
-	createTables()
+    fs := http.FileServer(http.Dir("./frontend"))
+    http.Handle("/", fs)
 
-	// Serve frontend
-	fs := http.FileServer(http.Dir("./frontend"))
-	http.Handle("/", fs)
+    http.HandleFunc("/signup", signupHandler)
+    http.HandleFunc("/login", loginHandler)
+    http.HandleFunc("/books", models.GetBooksHandler)
 
-	// API routes
-	http.HandleFunc("/signup", signupHandler)
-	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/books", getBooksHandler)
-	http.HandleFunc("/addbook", addBookHandler)
-	http.HandleFunc("/deletebook", deleteBookHandler)
-        http.HandleFunc("/borrow", handlers.BorrowBook(db))
-        http.HandleFunc("/return", handlers.ReturnBook(db))
-
-
-	fmt.Println("📚 Database ready with users & books!")
-	fmt.Println("🚀 Running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+    fmt.Println("🚀 Server running on http://localhost:8080")
+    log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func createTables() {
+    
+     func createTables() {
 	userTable := `
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,28 +54,34 @@ func createTables() {
 	}
 }
 
-// ---------------- HANDLERS ----------------
+// ---------------- HANDLERS ---------------
 
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+    if r.Method != http.MethodPost {
+        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+        return
+    }
 
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
+    var user struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+        Role     string `json:"role"`
+    }
 
-	_, err := db.Exec("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-		user.Username, user.Password, user.Role)
-	if err != nil {
-		http.Error(w, "Username already exists", http.StatusConflict)
-		return
-	}
+    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+        http.Error(w, "Invalid JSON", http.StatusBadRequest)
+        return
+    }
 
-	w.Write([]byte("Signup successful"))
+    _, err := db.Exec("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", user.Username, user.Password, user.Role)
+    if err != nil {
+        http.Error(w, "User already exists or database error", http.StatusBadRequest)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte(`{"message": "Signup successful"}`))
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,13 +90,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var creds User
+	var creds models.User
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
-	var dbUser User
+	var dbUser models.User
 	err := db.QueryRow("SELECT id, username, password, role FROM users WHERE username = ?", creds.Username).
 		Scan(&dbUser.ID, &dbUser.Username, &dbUser.Password, &dbUser.Role)
 	if err != nil {
@@ -142,9 +123,9 @@ func getBooksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var books []Book
+	var books []models.Book
 	for rows.Next() {
-		var b Book
+		var b models.Book
 		rows.Scan(&b.ID, &b.Title, &b.Author)
 		books = append(books, b)
 	}
@@ -158,7 +139,7 @@ func addBookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var b Book
+	var b models.Book
 	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
