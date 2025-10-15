@@ -1,38 +1,8 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f8f9fa;
-  margin: 0;
-  padding: 0;
-}
-
-.container {
-  width: 400px;
-  margin: 80px auto;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-input, select, button {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-button {
-  background: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #0056b3;
-}
-
-.center {
-  text-align: center;
-}
+body{font-family:Arial;margin:0;padding:20px}
+.center{display:flex;flex-direction:column;align-items:center;gap:10px}
+.btn{display:inline-block;padding:10px 16px;background:#2b7cff;color:#fff;text-decoration:none;border-radius:6px}
+input{display:block;margin:8px 0;padding:8px;width:260px}
+button{padding:8px 12px}
+#book-list{list-style:none;padding:0}
+.book{padding:8px;border:1px solid #ddd;margin-bottom:8px;border-radius:6px}
+.delete{margin-left:10px;color:#c00}

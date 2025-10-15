@@ -1,62 +1,54 @@
 package models
 
 import (
-	"database/sql"
 	"fmt"
 )
 
-var DB *sql.DB
-
 type Book struct {
-	ID     int
-	Title  string
-	Author string
-	Status string
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Status string `json:"status"`
 }
 
 type User struct {
-	ID       int
-	Username string
-	Password string
-	Role     string
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
 }
 
-// AddBook adds a new book to the database
 func AddBook(title, author string) error {
-	query := `INSERT INTO books (title, author, status) VALUES (?, ?, 'available');`
-	_, err := DB.Exec(query, title, author)
+	q := `INSERT INTO books (title, author, status) VALUES (?, ?, 'available')`
+	_, err := DB.Exec(q, title, author)
 	if err != nil {
-		return fmt.Errorf("failed to add book: %v", err)
+		return fmt.Errorf("AddBook: %v", err)
 	}
 	return nil
 }
 
-// GetAllBooks returns all books
 func GetAllBooks() ([]Book, error) {
-	rows, err := DB.Query(`SELECT id, title, author, status FROM books;`)
+	rows, err := DB.Query(`SELECT id, title, author, status FROM books ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var books []Book
+	var out []Book
 	for rows.Next() {
 		var b Book
-		err := rows.Scan(&b.ID, &b.Title, &b.Author, &b.Status)
-		if err != nil {
+		if err := rows.Scan(&b.ID, &b.Title, &b.Author, &b.Status); err != nil {
 			return nil, err
 		}
-		books = append(books, b)
+		out = append(out, b)
 	}
-	return books, nil
+	return out, nil
 }
 
-// DeleteBook removes a book by ID
 func DeleteBook(id int) error {
-	query := `DELETE FROM books WHERE id = ?`
-	_, err := DB.Exec(query, id)
+	_, err := DB.Exec(`DELETE FROM books WHERE id = ?`, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete book: %v", err)
+		return fmt.Errorf("DeleteBook: %v", err)
 	}
 	return nil
 }

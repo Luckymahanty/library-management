@@ -1,26 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign Up - Library</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
+<!doctype html>
+<html>
+<head><meta charset="utf-8"/><title>Sign up</title><link rel="stylesheet" href="style.css"></head>
 <body>
-  <div class="container">
-    <h2>Create Account</h2>
+  <main class="center">
+    <h2>Sign up</h2>
     <form id="signupForm">
-      <input type="text" id="username" placeholder="Username" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <select id="role">
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
+      <input id="su-username" placeholder="username" required>
+      <input id="su-password" type="password" placeholder="password" required>
+      <select id="su-role">
+        <option value="user">user</option>
+        <option value="admin">admin</option>
       </select>
-      <button type="submit">Sign Up</button>
+      <button type="submit">Sign up</button>
     </form>
-    <p>Already have an account? <a href="login.html">Login</a></p>
-  </div>
+    <p><a href="login.html">Login</a></p>
+  </main>
   <script src="signup.js"></script>
 </body>
 </html>
-

@@ -8,176 +8,136 @@ import (
 	"net/http"
 	"strconv"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/luckymahanty/library-management/models"
 )
 
 var db *sql.DB
 
 func main() {
-	db = initDB()
+	db = models.InitDB()
 	models.DB = db
 
-	fmt.Println("✅ Database ready with users & books!")
+	fmt.Println("📚 Database ready with users & books!")
 
+	// static files (frontend)
 	fs := http.FileServer(http.Dir("./frontend"))
 	http.Handle("/", fs)
 
+	// API
 	http.HandleFunc("/signup", signupHandler)
 	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/books", getBooksHandler)
-	http.HandleFunc("/addbook", addBookHandler)
-	http.HandleFunc("/deletebook", deleteBookHandler)
+	http.HandleFunc("/books", booksHandler)         // GET list
+	http.HandleFunc("/addbook", addBookHandler)     // POST add
+	http.HandleFunc("/deletebook", deleteBookHandler) // DELETE ?id=#
 
+	// start
 	fmt.Println("🚀 Server running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-// ---- Database setup ----
-func initDB() *sql.DB {
-	database, err := sql.Open("sqlite3", "./library.db")
-	if err != nil {
-		log.Fatalf("❌ Failed to connect database: %v", err)
-	}
+// ---- handlers ----
 
-	createTables(database)
-	fmt.Println("✅ Database initialized successfully")
-	return database
-}
-
-func createTables(db *sql.DB) {
-	userTable := `
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		username TEXT UNIQUE,
-		password TEXT,
-		role TEXT
-	);`
-
-	bookTable := `
-	CREATE TABLE IF NOT EXISTS books (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		title TEXT,
-		author TEXT,
-		status TEXT
-	);`
-
-	if _, err := db.Exec(userTable); err != nil {
-		log.Fatal(err)
-	}
-	if _, err := db.Exec(bookTable); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// ---- Handlers ----
 func signupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST", http.StatusMethodNotAllowed)
 		return
 	}
-
-	var user struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+	var u models.User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-
-	_, err := db.Exec("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-		user.Username, user.Password, user.Role)
+	if u.Username == "" || u.Password == "" {
+		http.Error(w, "username/password required", http.StatusBadRequest)
+		return
+	}
+	_, err := db.Exec("INSERT INTO users (username,password,role) VALUES (?, ?, ?)", u.Username, u.Password, u.Role)
 	if err != nil {
-		http.Error(w, "User already exists or DB error", http.StatusConflict)
+		http.Error(w, "user exists or db error", http.StatusConflict)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Signup successful"}`))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "signup successful"})
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST", http.StatusMethodNotAllowed)
 		return
 	}
-
-	var creds models.User
+	var creds struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-
-	var dbUser models.User
-	err := db.QueryRow("SELECT id, username, password, role FROM users WHERE username = ?", creds.Username).
-		Scan(&dbUser.ID, &dbUser.Username, &dbUser.Password, &dbUser.Role)
-	if err != nil {
-		http.Error(w, "Invalid username", http.StatusUnauthorized)
+	var u models.User
+	err := db.QueryRow("SELECT id,username,password,role FROM users WHERE username=?", creds.Username).
+		Scan(&u.ID, &u.Username, &u.Password, &u.Role)
+	if err == sql.ErrNoRows || u.Password != creds.Password {
+		http.Error(w, "invalid username or password", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
 		return
 	}
-
-	if dbUser.Password != creds.Password {
-		http.Error(w, "Invalid password", http.StatusUnauthorized)
-		return
-	}
-
-	json.NewEncoder(w).Encode(dbUser)
+	// return user object (frontend will redirect by role)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(u)
 }
 
-func getBooksHandler(w http.ResponseWriter, r *http.Request) {
-	books, err := models.GetAllBooks()
-	if err != nil {
-		http.Error(w, "Failed to fetch books", http.StatusInternalServerError)
+func booksHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		books, err := models.GetAllBooks()
+		if err != nil {
+			http.Error(w, "failed to fetch books", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(books)
 		return
 	}
-	json.NewEncoder(w).Encode(books)
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 }
 
 func addBookHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST", http.StatusMethodNotAllowed)
 		return
 	}
-
-	var book struct {
-		Title  string `json:"title"`
-		Author string `json:"author"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+	var b models.Book
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-
-	if err := models.AddBook(book.Title, book.Author); err != nil {
-		http.Error(w, "Failed to add book", http.StatusInternalServerError)
+	if b.Title == "" || b.Author == "" {
+		http.Error(w, "title/author required", http.StatusBadRequest)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "Book added successfully"}`))
+	if err := models.AddBook(b.Title, b.Author); err != nil {
+		http.Error(w, "failed to add book", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"message": "book added"})
 }
 
 func deleteBookHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+	// allow POST fallback from forms, but prefer DELETE
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		http.Error(w, "id required", http.StatusBadRequest)
 		return
 	}
-
-	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
-
 	if err := models.DeleteBook(id); err != nil {
-		http.Error(w, "Failed to delete book", http.StatusInternalServerError)
+		http.Error(w, "delete failed", http.StatusInternalServerError)
 		return
 	}
-
-	w.Write([]byte(`{"message": "Book deleted successfully"}`))
+	json.NewEncoder(w).Encode(map[string]string{"message": "book deleted"})
 }

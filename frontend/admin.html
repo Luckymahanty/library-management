@@ -1,27 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+  <meta charset="utf-8"/>
+  <title>Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h2>Welcome, Admin!</h2>
-    <button onclick="window.location.href='index.html'">Logout</button>
+  <main>
+    <h2>Admin Dashboard</h2>
+    <div id="admin-panel">
+      <input id="title" placeholder="Book title">
+      <input id="author" placeholder="Author">
+      <button id="addBookBtn">Add Book</button>
+    </div>
 
-    <h3>Manage Books</h3>
-    <form id="addBookForm">
-      <input type="text" id="title" placeholder="Book Title" required>
-      <input type="text" id="author" placeholder="Author" required>
-      <button type="submit">Add Book</button>
-    </form>
+    <h3>Books</h3>
+    <ul id="book-list"></ul>
+    <p><a href="index.html">Home</a></p>
+  </main>
 
-    <h3>Book List</h3>
-    <ul id="bookList"></ul>
-  </div>
-
+  <script src="script.js"></script>
   <script src="admin.js"></script>
+
+  <!-- 👇 Add this new script block -->
+  <script>
+  // Fetch and show books with delete buttons for admin
+  async function loadBooks() {
+    const res = await fetch('/books');
+    const books = await res.json();
+    const list = document.getElementById('book-list');
+    list.innerHTML = '';
+
+    books.forEach(b => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <strong>${b.title}</strong> — ${b.author} 
+        <button class="delete" data-id="${b.id}">Delete</button>
+      `;
+      list.appendChild(li);
+    });
+
+    // handle delete clicks
+    list.addEventListener('click', async (e) => {
+      if (e.target.matches('.delete')) {
+        const id = e.target.dataset.id;
+        const ok = confirm('Are you sure you want to delete this book?');
+        if (ok) {
+          await fetch('/books/' + id, { method: 'DELETE' });
+          e.target.closest('li').remove();
+        }
+      }
+    });
+  }
+
+  // Load the list when admin dashboard opens
+  loadBooks();
+  </script>
 </body>
 </html>

@@ -1,33 +1,25 @@
-function fetchBooks() {
-  fetch("/books")
-    .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById("book-list");
-      list.innerHTML = "";
-      data.forEach(b => {
-        list.innerHTML += `
-          <li>${b.title} by ${b.author}
-            <button onclick="deleteBook(${b.id})">Delete</button>
-          </li>`;
-      });
+async function fetchBooks() {
+  try {
+    const res = await fetch('/books');
+    if (!res.ok) return;
+    const books = await res.json();
+    const list = document.getElementById('book-list');
+    if (!list) return;
+    list.innerHTML = '';
+    books.forEach(b => {
+      const li = document.createElement('li');
+      li.className = 'book';
+      li.innerHTML = `<strong>${escapeHtml(b.title)}</strong> — ${escapeHtml(b.author)} <span style="color:gray">(${b.status||'available'})</span>`;
+      // if admin page, admin.js will add delete buttons by checking #addBookBtn
+      list.appendChild(li);
     });
+  } catch (e) {
+    console.error('fetchBooks', e);
+  }
 }
 
-function addBook() {
-  const title = document.getElementById("bookTitle").value;
-  const author = document.getElementById("bookAuthor").value;
-
-  fetch("/addbook", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, author }),
-  })
-  .then(res => res.json())
-  .then(() => fetchBooks());
+function escapeHtml(s) {
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
 }
 
-function deleteBook(id) {
-  fetch(`/deletebook?id=${id}`, { method: "DELETE" })
-    .then(res => res.json())
-    .then(() => fetchBooks());
-}
+document.addEventListener('DOMContentLoaded', fetchBooks);
