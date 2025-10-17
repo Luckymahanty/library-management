@@ -1,32 +1,22 @@
-# Stage 1: Build the Go binary
-FROM golang:1.24-bullseye AS builder
+# Use Go 1.24 with Alpine
+FROM golang:1.24-alpine
+
+# Install compiler and libc for CGO + SQLite
+RUN apk add --no-cache gcc g++ musl-dev sqlite-dev
 
 WORKDIR /app
 
-# Copy go.mod and go.sum first to leverage caching
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the project
 COPY . .
 
-# Enable CGO for SQLite
+# Enable CGO (required for go-sqlite3)
 ENV CGO_ENABLED=1
 
-# Build the Go binary
-RUN go build -o library-management .
-
-# Stage 2: Run the application
-FROM debian:bullseye-slim
-
-WORKDIR /root
-
-# Install SQLite (for runtime access)
-RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
-
-# Copy compiled binary and frontend folder
-COPY --from=builder /app/library-management .
-COPY --from=builder /app/frontend ./frontend
+RUN go build -o library-app .
 
 EXPOSE 8080
-CMD ["./library-management"]
+
+CMD ["./library-app"]
+

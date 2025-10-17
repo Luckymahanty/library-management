@@ -1,20 +1,82 @@
-<!doctype html>
-<html>
-<head><meta charset="utf-8"/><title>Sign up</title><link rel="stylesheet" href="style.css"></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - LibraryHub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
 <body>
-  <main class="center">
-    <h2>Sign up</h2>
-    <form id="signupForm">
-      <input id="su-username" placeholder="username" required>
-      <input id="su-password" type="password" placeholder="password" required>
-      <select id="su-role">
-        <option value="user">user</option>
-        <option value="admin">admin</option>
-      </select>
-      <button type="submit">Sign up</button>
-    </form>
-    <p><a href="login.html">Login</a></p>
-  </main>
-  <script src="signup.js"></script>
+    <div class="animated-bg"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book-reader"></i>
+                <span>LibraryHub</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+    </nav>
+
+    <div class="form-container">
+        <div class="form-card fade-in">
+            <div class="form-header">
+                <div class="icon-circle">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2>Create Account</h2>
+                <p>Join our library community</p>
+            </div>
+
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input type="text" id="username" name="username" required placeholder="Choose a username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input type="password" id="password" name="password" required placeholder="Create a password">
+                </div>
+
+                <div class="form-group">
+                    <label for="role">
+                        <i class="fas fa-user-tag"></i> Role
+                    </label>
+                    <select id="role" name="role" required>
+                        <option value="">Select your role</option>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+
+                <div class="form-footer">
+                    <p>Already have an account? <a href="login.html">Login here</a></p>
+                </div>
+            </form>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 LibraryHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="signup.js"></script>
 </body>
 </html>

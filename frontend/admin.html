@@ -1,60 +1,146 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Admin</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LibraryHub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <main>
-    <h2>Admin Dashboard</h2>
-    <div id="admin-panel">
-      <input id="title" placeholder="Book title">
-      <input id="author" placeholder="Author">
-      <button id="addBookBtn">Add Book</button>
+    <div class="animated-bg"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-book-reader"></i>
+                <span>LibraryHub Admin</span>
+            </div>
+            <div class="nav-right">
+                <span class="user-greeting">
+                    <i class="fas fa-user-shield"></i>
+                    <span id="adminGreeting">Admin Panel</span>
+                </span>
+                <button id="logoutBtn" class="btn btn-small">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header fade-in">
+            <h1>Admin Dashboard</h1>
+            <p>Manage your library collection</p>
+        </div>
+
+        <div class="admin-actions">
+            <button id="addBookBtn" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Add New Book
+            </button>
+        </div>
+
+        <div class="search-section">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search books by title or author...">
+            </div>
+        </div>
+
+        <div id="booksGrid" class="books-grid">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading books...</p>
+            </div>
+        </div>
     </div>
 
-    <h3>Books</h3>
-    <ul id="book-list"></ul>
-    <p><a href="index.html">Home</a></p>
-  </main>
+    <!-- Add Book Modal -->
+    <div id="addBookModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-book-medical"></i> Add New Book</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="addBookForm">
+                <div class="form-group">
+                    <label for="bookTitle">
+                        <i class="fas fa-heading"></i> Title
+                    </label>
+                    <input type="text" id="bookTitle" required placeholder="Enter book title">
+                </div>
+                <div class="form-group">
+                    <label for="bookAuthor">
+                        <i class="fas fa-pen-fancy"></i> Author
+                    </label>
+                    <input type="text" id="bookAuthor" required placeholder="Enter author name">
+                </div>
+                <div class="form-group">
+                    <label for="bookGenre">
+                        <i class="fas fa-list"></i> Genre
+                    </label>
+                    <input type="text" id="bookGenre" required placeholder="Enter genre">
+                </div>
+                <div class="form-group">
+                    <label for="bookQuantity">
+                        <i class="fas fa-sort-numeric-up"></i> Quantity
+                    </label>
+                    <input type="number" id="bookQuantity" required placeholder="Enter quantity" min="1">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-check"></i> Add Book
+                </button>
+            </form>
+        </div>
+    </div>
 
-  <script src="script.js"></script>
-  <script src="admin.js"></script>
+    <!-- Edit Book Modal -->
+    <div id="editBookModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Book</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="editBookForm">
+                <input type="hidden" id="editBookId">
+                <div class="form-group">
+                    <label for="editBookTitle">
+                        <i class="fas fa-heading"></i> Title
+                    </label>
+                    <input type="text" id="editBookTitle" required placeholder="Enter book title">
+                </div>
+                <div class="form-group">
+                    <label for="editBookAuthor">
+                        <i class="fas fa-pen-fancy"></i> Author
+                    </label>
+                    <input type="text" id="editBookAuthor" required placeholder="Enter author name">
+                </div>
+                <div class="form-group">
+                    <label for="editBookGenre">
+                        <i class="fas fa-list"></i> Genre
+                    </label>
+                    <input type="text" id="editBookGenre" required placeholder="Enter genre">
+                </div>
+                <div class="form-group">
+                    <label for="editBookQuantity">
+                        <i class="fas fa-sort-numeric-up"></i> Quantity
+                    </label>
+                    <input type="number" id="editBookQuantity" required placeholder="Enter quantity" min="1">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-check"></i> Update Book
+                </button>
+            </form>
+        </div>
+    </div>
 
-  <!-- 👇 Add this new script block -->
-  <script>
-  // Fetch and show books with delete buttons for admin
-  async function loadBooks() {
-    const res = await fetch('/books');
-    const books = await res.json();
-    const list = document.getElementById('book-list');
-    list.innerHTML = '';
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 LibraryHub. All rights reserved.</p>
+        </div>
+    </footer>
 
-    books.forEach(b => {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <strong>${b.title}</strong> — ${b.author} 
-        <button class="delete" data-id="${b.id}">Delete</button>
-      `;
-      list.appendChild(li);
-    });
-
-    // handle delete clicks
-    list.addEventListener('click', async (e) => {
-      if (e.target.matches('.delete')) {
-        const id = e.target.dataset.id;
-        const ok = confirm('Are you sure you want to delete this book?');
-        if (ok) {
-          await fetch('/books/' + id, { method: 'DELETE' });
-          e.target.closest('li').remove();
-        }
-      }
-    });
-  }
-
-  // Load the list when admin dashboard opens
-  loadBooks();
-  </script>
+    <script src="script.js"></script>
+    <script src="admin.js"></script>
 </body>
 </html>
