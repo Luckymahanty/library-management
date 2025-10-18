@@ -8,7 +8,7 @@ Future integration: frontend (HTML/CSS/JS), Docker, AWS (EC2, RDS, S3), Terrafor
 - Add books
 - View books
 - Delete books
-- In-memory database (Day 1)
+- In-memory database 
 
 ## 🔧 Run locally
 ```bash
