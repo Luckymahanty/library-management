@@ -1,7 +1,8 @@
-# 📚 Library Management System (Go + DevOps)
+# Library Management System (Go + DevOps)
+Name - LibraryHub
 
 A simple library management backend built in **Go**, with CRUD operations for books.  
-Future integration: frontend (HTML/CSS/JS), AWS (EC2, RDS, S3), Terraform, and CI/CD pipelines.
+Future integration: frontend (HTML/CSS/JS), Docker, AWS (EC2, RDS, S3), Terraform, and CI/CD pipelines.
 
 ## 🚀 Features
 - Add books
@@ -12,4 +13,11 @@ Future integration: frontend (HTML/CSS/JS), AWS (EC2, RDS, S3), Terraform, and C
 ## 🔧 Run locally
 ```bash
 go run main.go
-
+```
+## Run In Docker
+```
+ docker compose down -v
+ docker compose build --no-cache
+ docker compose up
+ ```
+ 
