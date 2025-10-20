@@ -8,7 +8,9 @@ Future integration: frontend (HTML/CSS/JS), Docker, AWS (EC2, RDS, S3), Terrafor
 - Add books
 - View books
 - Delete books
-- In-memory database 
+- In-memory database
+- Brow Book
+- Return Book
 
 ## 🔧 Run locally
 ```bash
@@ -20,4 +22,6 @@ go run main.go
  docker compose build --no-cache
  docker compose up
  ```
+ ## AWS CLI
+ create an ec2 instance than copy the backend an whole project to it.
  
