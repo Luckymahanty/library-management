@@ -2,7 +2,7 @@
 Name - LibraryHub
 
 A simple library management backend built in **Go**, with CRUD operations for books.  
-Future integration: frontend (HTML/CSS/JS), Docker, AWS (EC2, RDS, S3), Terraform, and CI/CD pipelines.
+Future integration: frontend (HTML/CSS/JS), Docker, AWS (EC2,S3), Terraform, and CI/CD pipelines.
 
 ## 🚀 Features
 - Add books
